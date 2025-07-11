@@ -1,0 +1,256 @@
+# 🔧 Environment Setup Guide
+
+## Quick Setup Instructions
+
+1. **Copy the template below** to create your `.env` file
+2. **Replace placeholder values** with your actual API keys and configurations
+3. **Save as `.env`** in your project root directory
+4. **Add `.env` to `.gitignore`** to keep secrets secure
+
+## 📝 Environment Template
+
+```bash
+# ================================================
+# AI AGENT DASHBOARD ENVIRONMENT CONFIGURATION
+# ================================================
+
+# =====================================
+# DATABASE CONFIGURATION
+# =====================================
+DATABASE_URL="file:./database.db"
+NOCODB_DATABASE_URL="sqlite:./nocodb.db"
+
+# =====================================
+# SECURITY & AUTHENTICATION
+# =====================================
+JWT_SECRET="your-super-secure-jwt-secret-here-min-32-chars"
+ENCRYPTION_KEY="your-aes-256-encryption-key-here-32-chars"
+BCRYPT_ROUNDS=12
+
+# =====================================
+# SERVER CONFIGURATION
+# =====================================
+PORT=3000
+FRONTEND_PORT=3001
+NODE_ENV=development
+CORS_ORIGINS="http://localhost:3001,http://localhost:3000"
+
+# =====================================
+# AI PROVIDER API KEYS
+# =====================================
+
+# OpenAI (GPT-3.5, GPT-4, GPT-4 Turbo)
+OPENAI_API_KEY="sk-your-openai-api-key-here"
+
+# Anthropic (Claude 3 Haiku, Sonnet, Opus)
+ANTHROPIC_API_KEY="sk-ant-your-anthropic-api-key-here"
+
+# Google AI (Gemini Pro, Gemini Pro Vision)
+GOOGLE_API_KEY="your-google-ai-api-key-here"
+
+# OpenRouter (Access to 200+ models)
+OPENROUTER_API_KEY="sk-or-your-openrouter-api-key-here"
+
+# DeepSeek (Coder models)
+DEEPSEEK_API_KEY="your-deepseek-api-key-here"
+
+# Mistral AI
+MISTRAL_API_KEY="your-mistral-api-key-here"
+
+# =====================================
+# FILE UPLOAD CONFIGURATION
+# =====================================
+MAX_FILE_SIZE="10485760"  # 10MB in bytes
+UPLOAD_DIR="./uploads"
+ALLOWED_FILE_TYPES="pdf,txt,md,json,csv,docx,png,jpg,jpeg"
+
+# =====================================
+# RATE LIMITING
+# =====================================
+RATE_LIMIT_WINDOW_MS=900000    # 15 minutes
+RATE_LIMIT_MAX_REQUESTS=100    # Max requests per window
+
+# =====================================
+# SOCKET.IO CONFIGURATION
+# =====================================
+SOCKET_CORS_ORIGINS="http://localhost:3001"
+
+# =====================================
+# LOGGING CONFIGURATION
+# =====================================
+LOG_LEVEL="info"               # debug, info, warn, error
+LOG_FILE="./logs/app.log"
+
+# =====================================
+# EMAIL CONFIGURATION (Optional)
+# =====================================
+SMTP_HOST="smtp.gmail.com"
+SMTP_PORT=587
+SMTP_USER="your-email@gmail.com"
+SMTP_PASS="your-app-password"
+
+# =====================================
+# VECTOR DATABASE (Optional - for advanced RAG)
+# =====================================
+PINECONE_API_KEY="your-pinecone-api-key"
+PINECONE_ENVIRONMENT="your-pinecone-environment"
+PINECONE_INDEX="ai-dashboard-knowledge"
+
+# =====================================
+# MONITORING & ANALYTICS (Optional)
+# =====================================
+SENTRY_DSN="your-sentry-dsn-for-error-tracking"
+ANALYTICS_API_KEY="your-analytics-api-key"
+
+# =====================================
+# WEBHOOK CONFIGURATION (Optional)
+# =====================================
+WEBHOOK_SECRET="your-webhook-secret-for-integrations"
+```
+
+## 🔑 How to Get API Keys
+
+### **OpenAI**
+1. Go to [platform.openai.com](https://platform.openai.com)
+2. Sign up/login and navigate to API Keys
+3. Create a new secret key
+4. Copy and paste into `OPENAI_API_KEY`
+
+### **Anthropic (Claude)**
+1. Visit [console.anthropic.com](https://console.anthropic.com)
+2. Sign up/login and go to API Keys
+3. Generate a new key
+4. Copy and paste into `ANTHROPIC_API_KEY`
+
+### **Google AI (Gemini)**
+1. Go to [aistudio.google.com](https://aistudio.google.com)
+2. Get your API key from the platform
+3. Copy and paste into `GOOGLE_API_KEY`
+
+### **OpenRouter (200+ Models)**
+1. Visit [openrouter.ai](https://openrouter.ai)
+2. Sign up and navigate to Keys
+3. Create a new API key
+4. Copy and paste into `OPENROUTER_API_KEY`
+
+### **DeepSeek**
+1. Go to [platform.deepseek.com](https://platform.deepseek.com)
+2. Sign up/login and create an API key
+3. Copy and paste into `DEEPSEEK_API_KEY`
+
+## 🛡️ Security Best Practices
+
+### **Environment File Security:**
+```bash
+# Add to .gitignore
+echo ".env" >> .gitignore
+echo ".env.local" >> .gitignore
+echo ".env.production" >> .gitignore
+```
+
+### **Generate Secure Secrets:**
+```bash
+# Generate JWT Secret (32+ characters)
+openssl rand -base64 32
+
+# Generate Encryption Key (32 characters for AES-256)
+openssl rand -hex 32
+```
+
+### **Production Environment:**
+- Use environment variables instead of `.env` files
+- Store secrets in secure vaults (AWS Secrets Manager, Azure Key Vault)
+- Rotate API keys regularly
+- Monitor usage and set up alerts
+
+## 🚀 Quick Start Commands
+
+```bash
+# Install dependencies
+npm install
+
+# Copy environment template
+cp .env.example .env
+
+# Edit with your API keys
+nano .env  # or use your preferred editor
+
+# Start development server
+npm run dev
+
+# Run database migrations
+npm run db:migrate
+
+# Start production server
+npm start
+```
+
+## ⚠️ Common Issues & Solutions
+
+### **Issue: API Keys Not Working**
+- Check for extra spaces or quotes in `.env` file
+- Ensure keys are properly formatted
+- Verify account has credits/access
+
+### **Issue: Database Connection Errors**
+- Check `DATABASE_URL` path is correct
+- Ensure database directory exists
+- Run migrations if needed
+
+### **Issue: CORS Errors**
+- Update `CORS_ORIGINS` with your frontend URL
+- Check ports match your development setup
+
+### **Issue: File Upload Fails**
+- Check `UPLOAD_DIR` exists and has write permissions
+- Verify `MAX_FILE_SIZE` is appropriate
+- Ensure `ALLOWED_FILE_TYPES` includes your file type
+
+## 📁 Directory Structure
+
+```
+project-root/
+├── .env                 # Your environment variables (DO NOT COMMIT)
+├── .env.example         # Template file (safe to commit)
+├── .gitignore          # Include .env in here
+├── backend/
+├── frontend/
+├── uploads/            # File upload directory
+├── logs/               # Application logs
+└── database/           # SQLite database files
+```
+
+## 🔄 Environment Switching
+
+### **Development:**
+```bash
+NODE_ENV=development
+```
+
+### **Production:**
+```bash
+NODE_ENV=production
+# Use production API endpoints
+# Enable security features
+# Use external databases
+```
+
+### **Testing:**
+```bash
+NODE_ENV=test
+# Use test database
+# Mock API calls
+# Faster execution
+```
+
+---
+
+## 🎯 Next Steps
+
+1. **Copy the template** and fill in your API keys
+2. **Test each integration** to ensure keys work
+3. **Set up your database** with NocoDB
+4. **Configure file upload** directories
+5. **Start development** with `npm run dev`
+
+**Remember:** Never commit your `.env` file to version control! Keep your API keys secure and rotate them regularly.
