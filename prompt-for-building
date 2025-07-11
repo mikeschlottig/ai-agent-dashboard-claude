@@ -1,0 +1,713 @@
+# 🚀 AI Agent Dashboard Development Prompt
+
+## 📋 Project Overview
+
+You are tasked with building a **production-ready AI Agent Integration Dashboard** based on the existing HTML prototype. This will be a full-stack application that serves as middleware for 200+ AI models with a professional frontend GUI.
+
+## 🏗️ Architecture Requirements
+
+### **System Architecture:**
+- **Backend API**: Node.js/Express middleware handling all AI integrations
+- **Frontend GUI**: Modern React/Next.js application for end users  
+- **Database**: NocoDB with SQLite backend for rapid development
+- **Current HTML**: Preserved as living API documentation/demo
+
+### **Tech Stack:**
+```
+Frontend: Next.js 14 + TypeScript + Tailwind CSS + Radix UI
+Backend: Node.js + Express + TypeScript + Prisma ORM
+Database: NocoDB (SQLite backend)
+Real-time: Socket.io for live chat
+Authentication: JWT + bcrypt
+File Storage: Local filesystem (with S3 upgrade path)
+```
+
+## 🎯 Phase 1: Foundation Setup (Week 1-2)
+
+### **1.1 Project Structure**
+```
+ai-dashboard/
+├── backend/
+│   ├── src/
+│   │   ├── routes/
+│   │   ├── middleware/
+│   │   ├── services/
+│   │   ├── models/
+│   │   └── utils/
+│   ├── uploads/
+│   └── database/
+├── frontend/
+│   ├── components/
+│   ├── pages/
+│   ├── hooks/
+│   ├── services/
+│   └── utils/
+├── docs/
+│   └── api-reference/ (current HTML dashboard)
+└── docker/
+```
+
+### **1.2 Environment Setup**
+
+**Create comprehensive .env configuration:**
+
+```bash
+# Database Configuration
+DATABASE_URL="file:./database.db"
+NOCODB_DATABASE_URL="sqlite:./nocodb.db"
+
+# JWT & Security
+JWT_SECRET="your-super-secure-jwt-secret-here"
+ENCRYPTION_KEY="your-aes-256-encryption-key-here"
+BCRYPT_ROUNDS=12
+
+# Server Configuration  
+PORT=3000
+FRONTEND_PORT=3001
+NODE_ENV=development
+CORS_ORIGINS="http://localhost:3001,http://localhost:3000"
+
+# AI Provider API Keys
+OPENAI_API_KEY="sk-your-openai-key"
+ANTHROPIC_API_KEY="sk-ant-your-anthropic-key"
+GOOGLE_API_KEY="your-google-ai-key"
+OPENROUTER_API_KEY="sk-or-your-openrouter-key"
+DEEPSEEK_API_KEY="your-deepseek-key"
+
+# File Upload Configuration
+MAX_FILE_SIZE="10485760"  # 10MB
+UPLOAD_DIR="./uploads"
+ALLOWED_FILE_TYPES="pdf,txt,md,json,csv,docx"
+
+# Rate Limiting
+RATE_LIMIT_WINDOW_MS=900000  # 15 minutes
+RATE_LIMIT_MAX_REQUESTS=100
+
+# Socket.io Configuration
+SOCKET_CORS_ORIGINS="http://localhost:3001"
+
+# Logging
+LOG_LEVEL="info"
+LOG_FILE="./logs/app.log"
+```
+
+### **1.3 Database Schema (NocoDB)**
+
+**Set up these tables in NocoDB:**
+
+```sql
+-- Users table
+CREATE TABLE users (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    email VARCHAR(255) UNIQUE NOT NULL,
+    password_hash VARCHAR(255) NOT NULL,
+    first_name VARCHAR(100),
+    last_name VARCHAR(100),
+    role VARCHAR(50) DEFAULT 'user',
+    is_active BOOLEAN DEFAULT true,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+-- API Keys table (encrypted storage)
+CREATE TABLE api_keys (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER REFERENCES users(id),
+    provider VARCHAR(50) NOT NULL,
+    key_name VARCHAR(100) NOT NULL,
+    encrypted_key TEXT NOT NULL,
+    is_active BOOLEAN DEFAULT true,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Chats table
+CREATE TABLE chats (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER REFERENCES users(id),
+    title VARCHAR(255),
+    model_used VARCHAR(100),
+    system_prompt TEXT,
+    total_tokens INTEGER DEFAULT 0,
+    total_cost DECIMAL(10,6) DEFAULT 0,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Messages table
+CREATE TABLE messages (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    chat_id INTEGER REFERENCES chats(id),
+    role VARCHAR(20) NOT NULL, -- 'user', 'assistant', 'system'
+    content TEXT NOT NULL,
+    model VARCHAR(100),
+    tokens_used INTEGER,
+    cost DECIMAL(10,6),
+    metadata JSON, -- For storing additional data
+    timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Knowledge Base Documents
+CREATE TABLE documents (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER REFERENCES users(id),
+    filename VARCHAR(255) NOT NULL,
+    original_name VARCHAR(255) NOT NULL,
+    file_type VARCHAR(50),
+    file_size INTEGER,
+    content TEXT,
+    metadata JSON,
+    embedding_status VARCHAR(50) DEFAULT 'pending',
+    uploaded_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+-- System Prompts
+CREATE TABLE system_prompts (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER REFERENCES users(id),
+    model VARCHAR(100),
+    prompt_name VARCHAR(255) NOT NULL,
+    prompt_content TEXT NOT NULL,
+    is_default BOOLEAN DEFAULT false,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+-- MCP Server Configurations
+CREATE TABLE mcp_servers (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER REFERENCES users(id),
+    server_name VARCHAR(100) NOT NULL,
+    endpoint VARCHAR(255),
+    config JSON,
+    status VARCHAR(50) DEFAULT 'disconnected',
+    last_connected DATETIME,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Usage Analytics
+CREATE TABLE usage_logs (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER REFERENCES users(id),
+    model VARCHAR(100),
+    action_type VARCHAR(50), -- 'chat', 'completion', 'embedding'
+    tokens_used INTEGER,
+    cost DECIMAL(10,6),
+    response_time_ms INTEGER,
+    success BOOLEAN,
+    timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+## 🎯 Phase 2: Backend API Development (Week 2-3)
+
+### **2.1 Core Services Implementation**
+
+**Create these essential services:**
+
+```typescript
+// services/aiService.ts
+interface AIServiceConfig {
+  model: string;
+  provider: string;
+  apiKey: string;
+  maxTokens?: number;
+  temperature?: number;
+}
+
+class AIService {
+  async sendMessage(config: AIServiceConfig, messages: Message[]): Promise<AIResponse>;
+  async streamMessage(config: AIServiceConfig, messages: Message[]): Promise<ReadableStream>;
+  async calculateCost(model: string, tokens: number): Promise<number>;
+  async getAvailableModels(): Promise<Model[]>;
+}
+
+// services/knowledgeService.ts
+class KnowledgeService {
+  async uploadDocument(userId: number, file: File): Promise<Document>;
+  async searchDocuments(userId: number, query: string): Promise<SearchResult[]>;
+  async deleteDocument(userId: number, documentId: number): Promise<void>;
+  async generateEmbeddings(content: string): Promise<number[]>;
+}
+
+// services/mcpService.ts
+class MCPService {
+  async connectServer(userId: number, config: MCPConfig): Promise<void>;
+  async disconnectServer(userId: number, serverId: number): Promise<void>;
+  async listTools(userId: number, serverId: number): Promise<Tool[]>;
+  async executeTool(serverId: number, toolName: string, params: any): Promise<any>;
+}
+```
+
+### **2.2 API Routes Implementation**
+
+**Priority routes to implement:**
+
+```typescript
+// routes/auth.ts
+POST /api/auth/register
+POST /api/auth/login  
+POST /api/auth/logout
+GET  /api/auth/profile
+PUT  /api/auth/profile
+
+// routes/models.ts
+GET  /api/models                    // List all available models
+GET  /api/models/providers          // List providers with status
+POST /api/models/chat               // Send chat message
+POST /api/models/stream             // Stream chat response
+GET  /api/models/pricing            // Get pricing information
+
+// routes/chats.ts  
+GET  /api/chats                     // Get user's chats
+POST /api/chats                     // Create new chat
+GET  /api/chats/:id                 // Get specific chat with messages
+PUT  /api/chats/:id                 // Update chat title/settings
+DELETE /api/chats/:id               // Delete chat
+
+// routes/apiKeys.ts
+GET  /api/api-keys                  // Get user's API keys (masked)
+POST /api/api-keys                  // Add new API key
+PUT  /api/api-keys/:id              // Update API key
+DELETE /api/api-keys/:id            // Delete API key
+
+// routes/knowledge.ts
+POST /api/knowledge/upload          // Upload document
+GET  /api/knowledge/documents       // List documents
+POST /api/knowledge/search          // Search knowledge base
+DELETE /api/knowledge/:id           // Delete document
+```
+
+### **2.3 WebSocket Implementation**
+
+```typescript
+// socket/chatSocket.ts
+io.on('connection', (socket) => {
+  socket.on('join-chat', (chatId) => {
+    socket.join(`chat-${chatId}`);
+  });
+
+  socket.on('send-message', async (data) => {
+    // Process message with AI
+    // Stream response back to client
+    // Save to database
+  });
+
+  socket.on('stream-response', (data) => {
+    // Handle streaming AI responses
+  });
+});
+```
+
+## 🎯 Phase 3: Frontend Development (Week 3-4)
+
+### **3.1 Component Architecture**
+
+```tsx
+// components/layout/
+├── AppLayout.tsx          // Main app layout
+├── Sidebar.tsx           // Navigation sidebar  
+├── Header.tsx            // Top header with user menu
+└── Footer.tsx            // Footer component
+
+// components/chat/
+├── ChatInterface.tsx     // Main chat component
+├── MessageList.tsx       // Chat message display
+├── MessageInput.tsx      // Message input with file upload
+├── ModelSelector.tsx     // Model selection dropdown
+└── ChatSettings.tsx      // Chat configuration panel
+
+// components/knowledge/
+├── KnowledgeBase.tsx     // Knowledge base manager
+├── DocumentUpload.tsx    // File upload component
+├── DocumentList.tsx      // Document listing
+└── SearchInterface.tsx   // Knowledge search
+
+// components/settings/
+├── APIKeyManager.tsx     // API key management
+├── SystemPrompts.tsx     // Prompt management
+├── MCPServers.tsx        // MCP server configuration
+└── UsageAnalytics.tsx    // Usage statistics
+```
+
+### **3.2 Key Pages Implementation**
+
+```tsx
+// pages/dashboard.tsx - Main dashboard
+export default function Dashboard() {
+  return (
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="lg:col-span-2">
+        <RecentChats />
+        <UsageOverview />
+      </div>
+      <div>
+        <QuickActions />
+        <ModelStatus />
+      </div>
+    </div>
+  );
+}
+
+// pages/chat.tsx - Chat interface
+export default function Chat() {
+  const [messages, setMessages] = useState([]);
+  const [selectedModel, setSelectedModel] = useState('gpt-4');
+  
+  return (
+    <div className="flex h-full">
+      <div className="flex-1">
+        <ChatInterface 
+          messages={messages}
+          onSendMessage={handleSendMessage}
+          selectedModel={selectedModel}
+        />
+      </div>
+      <div className="w-80">
+        <ChatSettings 
+          model={selectedModel}
+          onModelChange={setSelectedModel}
+        />
+      </div>
+    </div>
+  );
+}
+```
+
+### **3.3 State Management**
+
+```typescript
+// stores/authStore.ts
+interface AuthState {
+  user: User | null;
+  token: string | null;
+  isAuthenticated: boolean;
+  login: (email: string, password: string) => Promise<void>;
+  logout: () => void;
+}
+
+// stores/chatStore.ts  
+interface ChatState {
+  chats: Chat[];
+  currentChat: Chat | null;
+  messages: Message[];
+  selectedModel: string;
+  isStreaming: boolean;
+  sendMessage: (content: string) => Promise<void>;
+  createChat: () => Promise<void>;
+}
+
+// stores/settingsStore.ts
+interface SettingsState {
+  apiKeys: APIKey[];
+  systemPrompts: SystemPrompt[];
+  mcpServers: MCPServer[];
+  updateAPIKey: (key: APIKey) => Promise<void>;
+}
+```
+
+## 🎯 Phase 4: Advanced Features (Week 4-6)
+
+### **4.1 Real-time Chat with Streaming**
+
+```typescript
+// hooks/useStreamingChat.ts
+export function useStreamingChat(chatId: string) {
+  const [isStreaming, setIsStreaming] = useState(false);
+  const [streamingMessage, setStreamingMessage] = useState('');
+
+  const sendMessage = useCallback(async (content: string) => {
+    setIsStreaming(true);
+    
+    const response = await fetch('/api/models/stream', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ chatId, content, model: selectedModel })
+    });
+
+    const reader = response.body?.getReader();
+    let accumulated = '';
+
+    while (reader) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      
+      const chunk = new TextDecoder().decode(value);
+      accumulated += chunk;
+      setStreamingMessage(accumulated);
+    }
+
+    setIsStreaming(false);
+  }, [chatId, selectedModel]);
+
+  return { sendMessage, isStreaming, streamingMessage };
+}
+```
+
+### **4.2 Knowledge Base with RAG**
+
+```typescript
+// services/ragService.ts
+class RAGService {
+  async searchSimilarDocuments(query: string, userId: number): Promise<Document[]> {
+    // Generate query embedding
+    const queryEmbedding = await this.generateEmbedding(query);
+    
+    // Search for similar documents using cosine similarity
+    const results = await this.vectorSearch(queryEmbedding, userId);
+    
+    return results;
+  }
+
+  async generateContextualResponse(query: string, documents: Document[], model: string): Promise<string> {
+    const context = documents.map(doc => doc.content).join('\n\n');
+    
+    const prompt = `
+    Context: ${context}
+    
+    Question: ${query}
+    
+    Please answer the question based on the provided context.
+    `;
+
+    return await this.aiService.sendMessage(model, prompt);
+  }
+}
+```
+
+### **4.3 MCP Server Integration**
+
+```typescript
+// services/mcpClient.ts
+class MCPClient {
+  private connections = new Map<string, WebSocket>();
+
+  async connectToServer(config: MCPServerConfig): Promise<void> {
+    const ws = new WebSocket(config.endpoint);
+    
+    ws.on('open', () => {
+      this.connections.set(config.id, ws);
+      this.sendHandshake(ws, config);
+    });
+
+    ws.on('message', (data) => {
+      this.handleMessage(config.id, JSON.parse(data.toString()));
+    });
+  }
+
+  async callTool(serverId: string, toolName: string, parameters: any): Promise<any> {
+    const ws = this.connections.get(serverId);
+    if (!ws) throw new Error('Server not connected');
+
+    return new Promise((resolve, reject) => {
+      const requestId = generateId();
+      
+      ws.send(JSON.stringify({
+        id: requestId,
+        method: 'tool/call',
+        params: { name: toolName, parameters }
+      }));
+
+      this.pendingRequests.set(requestId, { resolve, reject });
+    });
+  }
+}
+```
+
+## 🎯 Phase 5: Production Readiness (Week 6-8)
+
+### **5.1 Docker Configuration**
+
+```dockerfile
+# backend/Dockerfile
+FROM node:18-alpine
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci --only=production
+COPY . .
+EXPOSE 3000
+CMD ["npm", "start"]
+
+# frontend/Dockerfile  
+FROM node:18-alpine AS builder
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci
+COPY . .
+RUN npm run build
+
+FROM nginx:alpine
+COPY --from=builder /app/dist /usr/share/nginx/html
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+EXPOSE 80
+```
+
+```yaml
+# docker-compose.yml
+version: '3.8'
+services:
+  backend:
+    build: ./backend
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+    volumes:
+      - ./uploads:/app/uploads
+      - ./database:/app/database
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+
+  nocodb:
+    image: nocodb/nocodb:latest
+    ports:
+      - "8080:8080"
+    environment:
+      - NC_DB=sqlite:///nocodb/data.db
+    volumes:
+      - nocodb_data:/nocodb
+```
+
+### **5.2 Security Implementation**
+
+```typescript
+// middleware/security.ts
+export const securityMiddleware = [
+  helmet(), // Security headers
+  cors({ origin: process.env.CORS_ORIGINS?.split(',') }),
+  rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 100 // limit each IP to 100 requests per windowMs
+  }),
+  // Input validation
+  // XSS protection
+  // CSRF protection
+];
+
+// utils/encryption.ts
+export class EncryptionService {
+  static encrypt(text: string): string {
+    const cipher = crypto.createCipher('aes-256-cbc', process.env.ENCRYPTION_KEY);
+    let encrypted = cipher.update(text, 'utf8', 'hex');
+    encrypted += cipher.final('hex');
+    return encrypted;
+  }
+
+  static decrypt(text: string): string {
+    const decipher = crypto.createDecipher('aes-256-cbc', process.env.ENCRYPTION_KEY);
+    let decrypted = decipher.update(text, 'hex', 'utf8');
+    decrypted += decipher.final('utf8');
+    return decrypted;
+  }
+}
+```
+
+### **5.3 Testing Strategy**
+
+```typescript
+// tests/integration/chat.test.ts
+describe('Chat API', () => {
+  test('should create new chat', async () => {
+    const response = await request(app)
+      .post('/api/chats')
+      .set('Authorization', `Bearer ${authToken}`)
+      .send({ title: 'Test Chat', model: 'gpt-4' })
+      .expect(201);
+
+    expect(response.body).toHaveProperty('id');
+    expect(response.body.title).toBe('Test Chat');
+  });
+
+  test('should send message and receive response', async () => {
+    const chatResponse = await request(app)
+      .post('/api/models/chat')
+      .set('Authorization', `Bearer ${authToken}`)
+      .send({
+        chatId: testChatId,
+        message: 'Hello, AI!',
+        model: 'gpt-4'
+      })
+      .expect(200);
+
+    expect(chatResponse.body).toHaveProperty('response');
+    expect(chatResponse.body.tokens_used).toBeGreaterThan(0);
+  });
+});
+```
+
+## 📋 Deployment Checklist
+
+### **Pre-deployment:**
+- [ ] All environment variables configured
+- [ ] Database migrations completed
+- [ ] API keys tested and validated
+- [ ] Security middleware implemented
+- [ ] Rate limiting configured
+- [ ] HTTPS certificates installed
+- [ ] Backup strategy implemented
+
+### **Production deployment:**
+- [ ] Docker containers built and tested
+- [ ] Load balancer configured
+- [ ] Monitoring and logging set up
+- [ ] Health checks implemented
+- [ ] CI/CD pipeline configured
+- [ ] Documentation updated
+
+## 🎯 Success Criteria
+
+### **Technical Metrics:**
+- [ ] API response time < 500ms
+- [ ] Chat streaming latency < 100ms  
+- [ ] File upload processing < 10 seconds
+- [ ] 99.9% uptime target
+- [ ] Zero critical security vulnerabilities
+
+### **User Experience:**
+- [ ] Intuitive onboarding flow
+- [ ] Seamless model switching
+- [ ] Real-time chat experience
+- [ ] Mobile-responsive design
+- [ ] Comprehensive error handling
+
+## 💡 Additional Implementation Notes
+
+### **API Integration Priorities:**
+1. **OpenAI** (GPT-3.5, GPT-4, GPT-4 Turbo)
+2. **Anthropic** (Claude 3 Haiku, Sonnet, Opus)  
+3. **OpenRouter** (200+ models unified)
+4. **Google AI** (Gemini Pro, Gemini Pro Vision)
+5. **DeepSeek** (Coder models)
+
+### **Knowledge Base Features:**
+- Support for PDF, TXT, MD, JSON, CSV files
+- Automatic text extraction and chunking
+- Vector embeddings for semantic search
+- RAG pipeline with context injection
+
+### **MCP Server Examples:**
+- Filesystem operations
+- Web search capabilities  
+- Database query tools
+- Git repository access
+- Docker container management
+
+---
+
+## 🚀 Getting Started
+
+1. **Clone the existing HTML dashboard** for reference
+2. **Set up the development environment** with Node.js, React, and NocoDB
+3. **Create the project structure** as outlined above
+4. **Start with Phase 1** authentication and basic API setup
+5. **Implement core chat functionality** in Phase 2
+6. **Build the frontend** progressively in Phase 3
+7. **Add advanced features** like RAG and MCP in Phase 4
+8. **Prepare for production** with security and deployment in Phase 5
+
+**Remember:** The existing HTML dashboard should be preserved as living API documentation that developers can reference while building integrations.
+
+This prompt provides a comprehensive roadmap for building a production-ready AI agent dashboard that will position LEVERAGE AI as a leader in the AI integration space!
