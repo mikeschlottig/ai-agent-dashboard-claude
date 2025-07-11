@@ -1,0 +1,1995 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Agent Integration Dashboard</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            color: #fff;
+            line-height: 1.6;
+        }
+
+        .dashboard {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .header h1 {
+            font-size: 3em;
+            color: #00d4ff;
+            margin-bottom: 10px;
+            text-shadow: 0 0 20px rgba(0, 212, 255, 0.5);
+        }
+
+        .header p {
+            font-size: 1.2em;
+            color: #b0c4de;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .stats-overview {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 15px;
+            text-align: center;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 30px rgba(0, 212, 255, 0.2);
+        }
+
+        .stat-number {
+            font-size: 2.5em;
+            font-weight: bold;
+            color: #00d4ff;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            color: #b0c4de;
+            font-size: 1.1em;
+        }
+
+        .agent-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+
+        .agent-card {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 25px;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .agent-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .agent-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .agent-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            margin-right: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5em;
+            font-weight: bold;
+        }
+
+        .claude-icon { background: linear-gradient(135deg, #ff6b6b, #ee5a24); }
+        .gpt-icon { background: linear-gradient(135deg, #00d4ff, #0984e3); }
+        .gemini-icon { background: linear-gradient(135deg, #fd79a8, #fdcb6e); }
+        .deepseek-icon { background: linear-gradient(135deg, #a29bfe, #6c5ce7); }
+        .llama-icon { background: linear-gradient(135deg, #00b894, #00cec9); }
+
+        .agent-title {
+            font-size: 1.5em;
+            color: #00d4ff;
+            margin-bottom: 5px;
+        }
+
+        .agent-provider {
+            color: #b0c4de;
+            font-size: 0.9em;
+        }
+
+        .agent-stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .agent-stat {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 10px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .agent-stat-value {
+            font-size: 1.3em;
+            font-weight: bold;
+            color: #00d4ff;
+        }
+
+        .agent-stat-label {
+            font-size: 0.8em;
+            color: #b0c4de;
+        }
+
+        .capabilities {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+
+        .capability {
+            background: rgba(0, 212, 255, 0.2);
+            color: #00d4ff;
+            padding: 5px 12px;
+            border-radius: 15px;
+            font-size: 0.9em;
+            border: 1px solid rgba(0, 212, 255, 0.3);
+        }
+
+        .api-section {
+            margin-top: 20px;
+        }
+
+        .api-tabs {
+            display: flex;
+            margin-bottom: 15px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+            overflow: hidden;
+            flex-wrap: wrap;
+        }
+
+        .api-tab {
+            flex: 1;
+            padding: 10px;
+            background: transparent;
+            border: none;
+            color: #b0c4de;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.9em;
+            min-width: 120px;
+        }
+
+        .api-tab.active {
+            background: rgba(0, 212, 255, 0.3);
+            color: #00d4ff;
+        }
+
+        .api-content {
+            display: none;
+        }
+
+        .api-content.active {
+            display: block;
+        }
+
+        .code-block {
+            background: rgba(0, 0, 0, 0.4);
+            border-radius: 8px;
+            overflow: hidden;
+            margin-bottom: 15px;
+        }
+
+        .code-header {
+            background: rgba(0, 0, 0, 0.6);
+            padding: 10px 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .code-title {
+            color: #00d4ff;
+            font-weight: bold;
+            font-size: 0.9em;
+        }
+
+        .copy-btn {
+            background: rgba(0, 212, 255, 0.2);
+            color: #00d4ff;
+            border: 1px solid rgba(0, 212, 255, 0.3);
+            padding: 5px 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.8em;
+            transition: all 0.3s ease;
+        }
+
+        .copy-btn:hover {
+            background: rgba(0, 212, 255, 0.3);
+        }
+
+        .code-content {
+            padding: 15px;
+            overflow-x: auto;
+        }
+
+        .code-content pre {
+            margin: 0;
+            font-size: 0.85em;
+            line-height: 1.4;
+        }
+
+        /* Chat Interface Styles */
+        .chat-interface {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid rgba(0, 212, 255, 0.2);
+        }
+
+        .chat-header {
+            background: rgba(0, 212, 255, 0.1);
+            padding: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(0, 212, 255, 0.2);
+        }
+
+        .chat-title {
+            color: #00d4ff;
+            font-weight: bold;
+            font-size: 1.1em;
+        }
+
+        .chat-controls {
+            display: flex;
+            gap: 10px;
+        }
+
+        .chat-btn {
+            padding: 6px 12px;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: all 0.3s ease;
+        }
+
+        .chat-btn.primary {
+            background: linear-gradient(135deg, #00d4ff, #0984e3);
+            color: white;
+        }
+
+        .chat-btn.secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: #b0c4de;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .chat-btn:hover {
+            transform: translateY(-1px);
+        }
+
+        .chat-messages {
+            height: 300px;
+            overflow-y: auto;
+            padding: 15px;
+            background: rgba(0, 0, 0, 0.2);
+        }
+
+        .chat-message {
+            display: flex;
+            margin-bottom: 20px;
+            align-items: flex-start;
+        }
+
+        .message-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #00d4ff, #0984e3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 12px;
+            flex-shrink: 0;
+        }
+
+        .message-content {
+            flex: 1;
+        }
+
+        .message-text {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 10px 15px;
+            border-radius: 12px;
+            margin-bottom: 5px;
+            line-height: 1.4;
+        }
+
+        .message-time {
+            font-size: 0.8em;
+            color: #b0c4de;
+            opacity: 0.7;
+        }
+
+        .chat-input-area {
+            border-top: 1px solid rgba(0, 212, 255, 0.2);
+        }
+
+        .chat-settings {
+            padding: 12px 15px;
+            background: rgba(0, 0, 0, 0.2);
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            align-items: center;
+            border-bottom: 1px solid rgba(0, 212, 255, 0.1);
+        }
+
+        .setting-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .setting-group label {
+            font-size: 0.9em;
+            color: #b0c4de;
+            white-space: nowrap;
+        }
+
+        .setting-group input[type="number"],
+        .setting-group input[type="range"] {
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(0, 212, 255, 0.3);
+            border-radius: 4px;
+            padding: 4px 8px;
+            color: #fff;
+            font-size: 0.9em;
+            width: 80px;
+        }
+
+        .setting-group input[type="range"] {
+            width: 100px;
+        }
+
+        .chat-input-container {
+            display: flex;
+            padding: 15px;
+            gap: 10px;
+            align-items: flex-end;
+        }
+
+        .chat-input {
+            flex: 1;
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(0, 212, 255, 0.3);
+            border-radius: 8px;
+            padding: 12px;
+            color: #fff;
+            font-family: inherit;
+            resize: vertical;
+            min-height: 20px;
+        }
+
+        .chat-input:focus {
+            outline: none;
+            border-color: #00d4ff;
+            box-shadow: 0 0 10px rgba(0, 212, 255, 0.3);
+        }
+
+        .send-btn {
+            background: linear-gradient(135deg, #00d4ff, #0984e3);
+            border: none;
+            border-radius: 8px;
+            width: 45px;
+            height: 45px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+
+        .send-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(0, 212, 255, 0.4);
+        }
+
+        .send-icon {
+            color: white;
+            font-size: 1.2em;
+            font-weight: bold;
+        }
+
+        /* Knowledge Base Styles */
+        .knowledge-base-manager {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid rgba(0, 212, 255, 0.2);
+        }
+
+        .kb-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid rgba(0, 212, 255, 0.2);
+        }
+
+        .kb-title {
+            color: #00d4ff;
+            font-size: 1.3em;
+            margin: 0;
+        }
+
+        .kb-stats {
+            display: flex;
+            gap: 15px;
+        }
+
+        .kb-stat {
+            font-size: 0.9em;
+            color: #b0c4de;
+        }
+
+        .kb-controls {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 20px;
+            align-items: center;
+        }
+
+        .kb-upload-area {
+            flex: 1;
+        }
+
+        .upload-dropzone {
+            border: 2px dashed rgba(0, 212, 255, 0.3);
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .upload-dropzone:hover {
+            border-color: #00d4ff;
+            background: rgba(0, 212, 255, 0.1);
+        }
+
+        .upload-icon {
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+
+        .upload-text {
+            color: #b0c4de;
+        }
+
+        .kb-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .kb-btn {
+            padding: 8px 16px;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: all 0.3s ease;
+        }
+
+        .kb-btn.primary {
+            background: linear-gradient(135deg, #00d4ff, #0984e3);
+            color: white;
+        }
+
+        .kb-btn.secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: #b0c4de;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .kb-content {
+            margin-bottom: 20px;
+        }
+
+        .kb-search {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .kb-search-input {
+            flex: 1;
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(0, 212, 255, 0.3);
+            border-radius: 6px;
+            padding: 10px;
+            color: #fff;
+        }
+
+        .search-btn {
+            background: linear-gradient(135deg, #00d4ff, #0984e3);
+            border: none;
+            border-radius: 6px;
+            padding: 10px 15px;
+            color: white;
+            cursor: pointer;
+        }
+
+        .kb-documents {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .kb-document {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 15px;
+        }
+
+        .kb-doc-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .kb-doc-name {
+            color: #00d4ff;
+            font-weight: bold;
+        }
+
+        .kb-doc-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .kb-doc-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            border-radius: 4px;
+            padding: 6px 8px;
+            color: #b0c4de;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .kb-doc-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .kb-doc-meta {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 10px;
+            font-size: 0.8em;
+            color: #b0c4de;
+        }
+
+        .kb-doc-status {
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-weight: bold;
+        }
+
+        .kb-doc-status.active {
+            background: rgba(0, 184, 148, 0.3);
+            color: #00b894;
+        }
+
+        .kb-doc-preview {
+            color: #b0c4de;
+            font-size: 0.9em;
+            line-height: 1.4;
+        }
+
+        .kb-integration-code {
+            margin-top: 20px;
+        }
+
+        /* System Prompt Styles */
+        .system-prompt-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+            backdrop-filter: blur(5px);
+        }
+
+        .system-prompt-modal.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .system-prompt-content {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            border-radius: 15px;
+            padding: 30px;
+            max-width: 800px;
+            width: 90%;
+            max-height: 80%;
+            overflow-y: auto;
+            border: 1px solid rgba(0, 212, 255, 0.3);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+        }
+
+        .system-prompt-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid rgba(0, 212, 255, 0.3);
+        }
+
+        .system-prompt-title {
+            color: #00d4ff;
+            font-size: 1.8em;
+            margin: 0;
+        }
+
+        .close-modal {
+            background: rgba(255, 76, 76, 0.2);
+            color: #ff4c4c;
+            border: 1px solid rgba(255, 76, 76, 0.3);
+            padding: 8px 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1.1em;
+            transition: all 0.3s ease;
+        }
+
+        .close-modal:hover {
+            background: rgba(255, 76, 76, 0.3);
+            transform: scale(1.05);
+        }
+
+        .prompt-templates {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .prompt-template {
+            background: rgba(0, 212, 255, 0.1);
+            border: 1px solid rgba(0, 212, 255, 0.3);
+            border-radius: 10px;
+            padding: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+
+        .prompt-template:hover {
+            background: rgba(0, 212, 255, 0.2);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 212, 255, 0.2);
+        }
+
+        .prompt-template.active {
+            background: rgba(0, 212, 255, 0.3);
+            border-color: #00d4ff;
+        }
+
+        .template-name {
+            color: #00d4ff;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .template-description {
+            color: #b0c4de;
+            font-size: 0.9em;
+        }
+
+        .prompt-editor {
+            margin-bottom: 20px;
+        }
+
+        .prompt-editor label {
+            display: block;
+            color: #00d4ff;
+            margin-bottom: 8px;
+            font-weight: bold;
+        }
+
+        .prompt-textarea {
+            width: 100%;
+            height: 200px;
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(0, 212, 255, 0.3);
+            border-radius: 8px;
+            padding: 15px;
+            color: #fff;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            line-height: 1.5;
+            resize: vertical;
+        }
+
+        .prompt-textarea:focus {
+            outline: none;
+            border-color: #00d4ff;
+            box-shadow: 0 0 10px rgba(0, 212, 255, 0.3);
+        }
+
+        .prompt-actions {
+            display: flex;
+            gap: 15px;
+            justify-content: flex-end;
+        }
+
+        .prompt-btn {
+            padding: 10px 20px;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+
+        .prompt-btn.primary {
+            background: linear-gradient(135deg, #00d4ff, #0984e3);
+            color: white;
+        }
+
+        .prompt-btn.secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: #b0c4de;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .prompt-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .system-prompt-indicator {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            background: #50fa7b;
+            border-radius: 50%;
+            margin-left: 8px;
+            animation: pulse-green 2s infinite;
+        }
+
+        @keyframes pulse-green {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+
+        .status-connected { background: #00b894; }
+        .status-available { background: #fdcb6e; }
+        .status-error { background: #e17055; }
+
+        @media (max-width: 768px) {
+            .agent-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .stats-overview {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .api-tabs {
+                flex-direction: column;
+            }
+            
+            .api-tab {
+                min-width: unset;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard">
+        <div class="header">
+            <h1>🤖 AI Agent Integration Dashboard</h1>
+            <p>Comprehensive API integration scripts for embedding AI models into any application with Chat, MCP, and Knowledge Base capabilities</p>
+        </div>
+
+        <div class="stats-overview">
+            <div class="stat-card">
+                <div class="stat-number">200+</div>
+                <div class="stat-label">AI Models</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">15+</div>
+                <div class="stat-label">Providers</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">50+</div>
+                <div class="stat-label">Integration Examples</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">99.9%</div>
+                <div class="stat-label">Uptime</div>
+            </div>
+        </div>
+
+        <div class="agent-grid">
+            <!-- Claude 3.5 Sonnet -->
+            <div class="agent-card">
+                <div class="agent-header">
+                    <div class="agent-icon claude-icon">C</div>
+                    <div>
+                        <div class="agent-title">
+                            <span class="status-indicator status-connected"></span>
+                            Claude 3.5 Sonnet
+                        </div>
+                        <div class="agent-provider">Anthropic</div>
+                    </div>
+                </div>
+                
+                <div class="agent-stats">
+                    <div class="agent-stat">
+                        <div class="agent-stat-value">9.5/10</div>
+                        <div class="agent-stat-label">Accuracy</div>
+                    </div>
+                    <div class="agent-stat">
+                        <div class="agent-stat-value">42ms</div>
+                        <div class="agent-stat-label">Speed</div>
+                    </div>
+                    <div class="agent-stat">
+                        <div class="agent-stat-value">200K</div>
+                        <div class="agent-stat-label">Context</div>
+                    </div>
+                </div>
+
+                <div class="capabilities">
+                    <span class="capability">Text Analysis</span>
+                    <span class="capability">Code Generation</span>
+                    <span class="capability">Reasoning</span>
+                    <span class="capability">Creative Writing</span>
+                </div>
+
+                <div class="api-section">
+                    <div class="api-tabs">
+                        <button class="api-tab active" onclick="showApiTab(this, 'claude-node')">Node.js</button>
+                        <button class="api-tab" onclick="showApiTab(this, 'claude-python')">Python</button>
+                        <button class="api-tab" onclick="showApiTab(this, 'claude-curl')">cURL</button>
+                        <button class="api-tab" onclick="showApiTab(this, 'claude-chat')">💬 Chat</button>
+                        <button class="api-tab" onclick="showApiTab(this, 'claude-mcp')">🔧 MCP</button>
+                        <button class="api-tab" onclick="showApiTab(this, 'claude-kb')">📚 Knowledge</button>
+                        <button class="api-tab" onclick="showSystemPrompt('claude')">System Prompt<span class="system-prompt-indicator"></span></button>
+                    </div>
+
+                    <div id="claude-node" class="api-content active">
+                        <div class="code-block">
+                            <div class="code-header">
+                                <span class="code-title">Node.js Integration</span>
+                                <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                            </div>
+                            <div class="code-content">
+                                <pre><code>const Anthropic = require('@anthropic-ai/sdk');
+
+const anthropic = new Anthropic({
+    apiKey: process.env.ANTHROPIC_API_KEY,
+});
+
+async function callClaude(prompt, maxTokens = 1000) {
+    try {
+        const response = await anthropic.messages.create({
+            model: "claude-3-5-sonnet-20241022",
+            max_tokens: maxTokens,
+            messages: [
+                {
+                    role: "user",
+                    content: prompt
+                }
+            ]
+        });
+        
+        return response.content[0].text;
+    } catch (error) {
+        console.error('Claude API Error:', error);
+        throw error;
+    }
+}
+
+// Usage Example
+(async () => {
+    const result = await callClaude("Analyze this data and provide insights...");
+    console.log(result);
+})();</code></pre>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="claude-python" class="api-content">
+                        <div class="code-block">
+                            <div class="code-header">
+                                <span class="code-title">Python Integration</span>
+                                <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                            </div>
+                            <div class="code-content">
+                                <pre><code>import anthropic
+import os
+
+client = anthropic.Anthropic(
+    api_key=os.environ.get("ANTHROPIC_API_KEY"),
+)
+
+def call_claude(prompt, max_tokens=1000):
+    try:
+        message = client.messages.create(
+            model="claude-3-5-sonnet-20241022",
+            max_tokens=max_tokens,
+            messages=[
+                {
+                    "role": "user",
+                    "content": prompt
+                }
+            ]
+        )
+        return message.content[0].text
+    except Exception as e:
+        print(f"Claude API Error: {e}")
+        raise e
+
+# Usage Example
+result = call_claude("Generate a marketing strategy for...")
+print(result)</code></pre>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="claude-curl" class="api-content">
+                        <div class="code-block">
+                            <div class="code-header">
+                                <span class="code-title">cURL Command</span>
+                                <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                            </div>
+                            <div class="code-content">
+                                <pre><code>curl https://api.anthropic.com/v1/messages \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: $ANTHROPIC_API_KEY" \
+  -H "anthropic-version: 2023-06-01" \
+  -d '{
+    "model": "claude-3-5-sonnet-20241022",
+    "max_tokens": 1000,
+    "messages": [
+      {
+        "role": "user",
+        "content": "Your prompt here"
+      }
+    ]
+  }'</code></pre>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="claude-chat" class="api-content">
+                        <div class="chat-interface">
+                            <div class="chat-header">
+                                <span class="chat-title">🤖 Test Claude Integration</span>
+                                <div class="chat-controls">
+                                    <button class="chat-btn secondary" onclick="clearChat('claude')">Clear</button>
+                                    <button class="chat-btn primary" onclick="exportChat('claude')">Export</button>
+                                </div>
+                            </div>
+                            <div class="chat-messages" id="claude-messages">
+                                <div class="chat-message assistant">
+                                    <div class="message-avatar">🤖</div>
+                                    <div class="message-content">
+                                        <div class="message-text">Hello! I'm Claude 3.5 Sonnet. Send me a message to test the integration with your custom system prompt and settings.</div>
+                                        <div class="message-time">Just now</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="chat-input-area">
+                                <div class="chat-settings">
+                                    <div class="setting-group">
+                                        <label>Max Tokens:</label>
+                                        <input type="number" value="1000" min="1" max="4000" id="claude-max-tokens">
+                                    </div>
+                                    <div class="setting-group">
+                                        <label>Temperature:</label>
+                                        <input type="range" min="0" max="1" step="0.1" value="0.7" id="claude-temperature">
+                                        <span id="claude-temp-display">0.7</span>
+                                    </div>
+                                </div>
+                                <div class="chat-input-container">
+                                    <textarea class="chat-input" id="claude-input" placeholder="Type your message here..." rows="3"></textarea>
+                                    <button class="send-btn" onclick="sendMessage('claude')">
+                                        <span class="send-icon">→</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="claude-mcp" class="api-content">
+                        <div class="code-block">
+                            <div class="code-header">
+                                <span class="code-title">MCP Server Integration</span>
+                                <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                            </div>
+                            <div class="code-content">
+                                <pre><code>// Claude with MCP (Model Context Protocol) Integration
+const { MCPClient } = require('@anthropic-ai/mcp-client');
+const Anthropic = require('@anthropic-ai/sdk');
+
+class ClaudeMCPIntegration {
+    constructor(apiKey, mcpServers = []) {
+        this.anthropic = new Anthropic({ apiKey });
+        this.mcpClient = new MCPClient();
+        this.mcpServers = mcpServers;
+        this.connectedServers = new Map();
+    }
+
+    async connectMCPServers() {
+        for (const server of this.mcpServers) {
+            try {
+                const connection = await this.mcpClient.connect(server);
+                this.connectedServers.set(server.name, connection);
+                console.log(`Connected to MCP server: ${server.name}`);
+            } catch (error) {
+                console.error(`Failed to connect to ${server.name}:`, error);
+            }
+        }
+    }
+
+    async callClaudeWithMCP(prompt, options = {}) {
+        // Get available tools from MCP servers
+        const tools = await this.getAvailableTools();
+        
+        const response = await this.anthropic.messages.create({
+            model: "claude-3-5-sonnet-20241022",
+            max_tokens: options.maxTokens || 1000,
+            messages: [
+                {
+                    role: "user",
+                    content: prompt
+                }
+            ],
+            tools: tools
+        });
+
+        // Handle tool calls through MCP
+        if (response.stop_reason === "tool_use") {
+            return await this.handleToolCalls(response.content, prompt);
+        }
+
+        return response.content[0].text;
+    }
+}
+
+// Usage Example
+const claude = new ClaudeMCPIntegration(process.env.ANTHROPIC_API_KEY, mcpServers);
+await claude.connectMCPServers();
+
+const response = await claude.callClaudeWithMCP(
+    "Analyze the sales data from last quarter and search for market trends"
+);</code></pre>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="claude-kb" class="api-content">
+                        <div class="knowledge-base-manager">
+                            <div class="kb-header">
+                                <h4 class="kb-title">📚 Knowledge Base Management</h4>
+                                <div class="kb-stats">
+                                    <span class="kb-stat">
+                                        <strong>12</strong> Documents
+                                    </span>
+                                    <span class="kb-stat">
+                                        <strong>2.4MB</strong> Total Size
+                                    </span>
+                                    <span class="kb-stat">
+                                        <strong>Active</strong> Status
+                                    </span>
+                                </div>
+                            </div>
+                            
+                            <div class="kb-controls">
+                                <div class="kb-upload-area">
+                                    <div class="upload-dropzone" onclick="document.getElementById('claude-file-input').click()">
+                                        <div class="upload-icon">📎</div>
+                                        <div class="upload-text">
+                                            <strong>Click to upload</strong> or drag files here
+                                            <br><small>Supports: PDF, TXT, MD, JSON, CSV</small>
+                                        </div>
+                                    </div>
+                                    <input type="file" id="claude-file-input" multiple accept=".pdf,.txt,.md,.json,.csv" style="display: none;">
+                                </div>
+                                
+                                <div class="kb-actions">
+                                    <button class="kb-btn primary" onclick="addManualEntry('claude')">
+                                        ➕ Add Entry
+                                    </button>
+                                    <button class="kb-btn secondary" onclick="importFromURL('claude')">
+                                        🌐 Import URL
+                                    </button>
+                                    <button class="kb-btn secondary" onclick="syncKnowledgeBase('claude')">
+                                        🔄 Sync
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="kb-content">
+                                <div class="kb-search">
+                                    <input type="text" placeholder="Search knowledge base..." class="kb-search-input" id="claude-kb-search">
+                                    <button class="search-btn" onclick="searchKB('claude')">🔍</button>
+                                </div>
+
+                                <div class="kb-documents" id="claude-kb-docs">
+                                    <div class="kb-document">
+                                        <div class="kb-doc-header">
+                                            <span class="kb-doc-name">📄 Company Guidelines.pdf</span>
+                                            <div class="kb-doc-actions">
+                                                <button class="kb-doc-btn" onclick="editKBDoc('claude', 'guidelines')">✏️</button>
+                                                <button class="kb-doc-btn" onclick="removeKBDoc('claude', 'guidelines')">🗑️</button>
+                                            </div>
+                                        </div>
+                                        <div class="kb-doc-meta">
+                                            <span>Added: 2024-01-15</span>
+                                            <span>Size: 245KB</span>
+                                            <span class="kb-doc-status active">Active</span>
+                                        </div>
+                                        <div class="kb-doc-preview">
+                                            Company policies and procedures for AI integration projects...
+                                        </div>
+                                    </div>
+
+                                    <div class="kb-document">
+                                        <div class="kb-doc-header">
+                                            <span class="kb-doc-name">📊 Sales Data Q4.csv</span>
+                                            <div class="kb-doc-actions">
+                                                <button class="kb-doc-btn" onclick="editKBDoc('claude', 'salesdata')">✏️</button>
+                                                <button class="kb-doc-btn" onclick="removeKBDoc('claude', 'salesdata')">🗑️</button>
+                                            </div>
+                                        </div>
+                                        <div class="kb-doc-meta">
+                                            <span>Added: 2024-01-12</span>
+                                            <span>Size: 189KB</span>
+                                            <span class="kb-doc-status active">Active</span>
+                                        </div>
+                                        <div class="kb-doc-preview">
+                                            Quarterly sales performance metrics and customer analytics...
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="kb-integration-code">
+                                <div class="code-block">
+                                    <div class="code-header">
+                                        <span class="code-title">Knowledge Base Integration</span>
+                                        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                                    </div>
+                                    <div class="code-content">
+                                        <pre><code>// Claude with Knowledge Base Integration
+class ClaudeKBIntegration {
+    constructor(apiKey, knowledgeBaseId) {
+        this.anthropic = new Anthropic({ apiKey });
+        this.kbId = knowledgeBaseId;
+        this.vectorStore = new VectorStore(); // Your vector database
+    }
+
+    async queryWithKnowledge(question, context = {}) {
+        // Retrieve relevant knowledge
+        const relevantDocs = await this.searchKnowledgeBase(question);
+        
+        // Build context-aware prompt
+        const prompt = this.buildKnowledgePrompt(question, relevantDocs, context);
+        
+        const response = await this.anthropic.messages.create({
+            model: "claude-3-5-sonnet-20241022",
+            max_tokens: 2000,
+            messages: [
+                {
+                    role: "user",
+                    content: prompt
+                }
+            ]
+        });
+        
+        return {
+            answer: response.content[0].text,
+            sources: relevantDocs.map(doc => doc.metadata),
+            confidence: this.calculateConfidence(relevantDocs)
+        };
+    }
+}</code></pre>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- OpenRouter Multi-Model Hub -->
+            <div class="agent-card" style="grid-column: 1 / -1;">
+                <div class="agent-header">
+                    <div class="agent-icon" style="background: linear-gradient(135deg, #ff6b6b, #4ecdc4, #45b7d1, #96ceb4, #feca57);">🌐</div>
+                    <div>
+                        <div class="agent-title">
+                            <span class="status-indicator status-connected"></span>
+                            OpenRouter Multi-Model Hub
+                        </div>
+                        <div class="agent-provider">OpenRouter.ai - Access 200+ AI Models</div>
+                    </div>
+                </div>
+                
+                <div class="agent-stats">
+                    <div class="agent-stat">
+                        <div class="agent-stat-value">200+</div>
+                        <div class="agent-stat-label">Models</div>
+                    </div>
+                    <div class="agent-stat">
+                        <div class="agent-stat-value">15+</div>
+                        <div class="agent-stat-label">Providers</div>
+                    </div>
+                    <div class="agent-stat">
+                        <div class="agent-stat-value">99.9%</div>
+                        <div class="agent-stat-label">Uptime</div>
+                    </div>
+                    <div class="agent-stat">
+                        <div class="agent-stat-value">$0.02</div>
+                        <div class="agent-stat-label">Min Cost/1M</div>
+                    </div>
+                </div>
+
+                <div class="capabilities">
+                    <span class="capability">Unified API</span>
+                    <span class="capability">Cost Optimization</span>
+                    <span class="capability">Fallback Routing</span>
+                    <span class="capability">Real-time Pricing</span>
+                    <span class="capability">Model Comparison</span>
+                </div>
+
+                <div class="api-section">
+                    <div class="api-tabs">
+                        <button class="api-tab active" onclick="showApiTab(this, 'openrouter-unified')">Unified API</button>
+                        <button class="api-tab" onclick="showApiTab(this, 'openrouter-routing')">Smart Routing</button>
+                        <button class="api-tab" onclick="showApiTab(this, 'openrouter-chat')">💬 Chat</button>
+                        <button class="api-tab" onclick="showApiTab(this, 'openrouter-mcp')">🔧 MCP</button>
+                        <button class="api-tab" onclick="showApiTab(this, 'openrouter-kb')">📚 Knowledge</button>
+                        <button class="api-tab" onclick="showSystemPrompt('openrouter')">System Prompt<span class="system-prompt-indicator"></span></button>
+                    </div>
+
+                    <div id="openrouter-unified" class="api-content active">
+                        <div class="code-block">
+                            <div class="code-header">
+                                <span class="code-title">OpenRouter Unified API</span>
+                                <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                            </div>
+                            <div class="code-content">
+                                <pre><code>const OpenAI = require('openai');
+
+// OpenRouter acts as a unified gateway to 200+ models
+const openrouter = new OpenAI({
+    baseURL: "https://openrouter.ai/api/v1",
+    apiKey: process.env.OPENROUTER_API_KEY,
+    defaultHeaders: {
+        "HTTP-Referer": "https://yourapp.com", // Optional
+        "X-Title": "Your App Name" // Optional
+    }
+});
+
+// Universal function that works with ANY model
+async function callAnyModel(prompt, model = "openai/gpt-4-turbo", options = {}) {
+    try {
+        const response = await openrouter.chat.completions.create({
+            model: model,
+            messages: [
+                {
+                    role: "user",
+                    content: prompt
+                }
+            ],
+            max_tokens: options.maxTokens || 1000,
+            temperature: options.temperature || 0.7
+        });
+        
+        return {
+            content: response.choices[0].message.content,
+            model: response.model,
+            usage: response.usage,
+            cost: calculateCost(response.usage, model)
+        };
+    } catch (error) {
+        console.error(`Error with model ${model}:`, error);
+        throw error;
+    }
+}
+
+// Available models (constantly updated)
+const POPULAR_MODELS = {
+    // OpenAI Models
+    "openai/gpt-4-turbo": "Latest GPT-4 Turbo",
+    "openai/gpt-4": "GPT-4 Base",
+    "openai/gpt-3.5-turbo": "GPT-3.5 Turbo",
+    
+    // Anthropic Models  
+    "anthropic/claude-3-opus": "Claude 3 Opus (Most Capable)",
+    "anthropic/claude-3-sonnet": "Claude 3 Sonnet (Balanced)",
+    "anthropic/claude-3-haiku": "Claude 3 Haiku (Fast)",
+    
+    // Google Models
+    "google/gemini-pro": "Gemini Pro",
+    "google/gemini-pro-vision": "Gemini Pro Vision",
+    
+    // Meta Models
+    "meta-llama/llama-3-70b-instruct": "Llama 3 70B",
+    "meta-llama/llama-3-8b-instruct": "Llama 3 8B"
+};</code></pre>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="openrouter-routing" class="api-content">
+                        <div class="code-block">
+                            <div class="code-header">
+                                <span class="code-title">Smart Model Routing & Fallbacks</span>
+                                <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                            </div>
+                            <div class="code-content">
+                                <pre><code>class OpenRouterSmartClient {
+    constructor(apiKey) {
+        this.client = new OpenAI({
+            baseURL: "https://openrouter.ai/api/v1",
+            apiKey: apiKey
+        });
+        
+        // Model tiers for different use cases
+        this.modelTiers = {
+            premium: [
+                "openai/gpt-4-turbo",
+                "anthropic/claude-3-opus",
+                "google/gemini-pro"
+            ],
+            balanced: [
+                "openai/gpt-3.5-turbo",
+                "anthropic/claude-3-sonnet", 
+                "mistralai/mixtral-8x7b-instruct"
+            ],
+            economical: [
+                "meta-llama/llama-3-8b-instruct",
+                "mistralai/mistral-7b-instruct"
+            ]
+        };
+    }
+
+    async smartRoute(prompt, options = {}) {
+        const {
+            tier = 'balanced',
+            maxCost = 0.10,
+            timeout = 30000,
+            fallbackTiers = ['economical']
+        } = options;
+
+        // Try primary tier
+        for (const model of this.modelTiers[tier]) {
+            try {
+                const result = await this.callWithTimeout(prompt, model, timeout);
+                
+                if (result.estimatedCost <= maxCost) {
+                    return {
+                        ...result,
+                        tier: tier,
+                        selectedModel: model,
+                        fallbackUsed: false
+                    };
+                }
+            } catch (error) {
+                console.warn(`Model ${model} failed:`, error.message);
+                continue;
+            }
+        }
+
+        // Try fallback tiers
+        for (const fallbackTier of fallbackTiers) {
+            for (const model of this.modelTiers[fallbackTier]) {
+                try {
+                    const result = await this.callWithTimeout(prompt, model, timeout);
+                    return {
+                        ...result,
+                        tier: fallbackTier,
+                        selectedModel: model,
+                        fallbackUsed: true
+                    };
+                } catch (error) {
+                    continue;
+                }
+            }
+        }
+
+        throw new Error('All models failed');
+    }
+}</code></pre>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="openrouter-chat" class="api-content">
+                        <div class="chat-interface">
+                            <div class="chat-header">
+                                <span class="chat-title">🌐 OpenRouter Multi-Model Chat</span>
+                                <div class="chat-controls">
+                                    <select id="openrouter-model-select" style="background: rgba(0,0,0,0.4); border: 1px solid rgba(0,212,255,0.3); border-radius: 6px; padding: 8px; color: #fff; margin-right: 10px;">
+                                        <option value="openai/gpt-4-turbo">GPT-4 Turbo</option>
+                                        <option value="anthropic/claude-3-opus">Claude 3 Opus</option>
+                                        <option value="google/gemini-pro">Gemini Pro</option>
+                                        <option value="meta-llama/llama-3-70b-instruct">Llama 3 70B</option>
+                                    </select>
+                                    <button class="chat-btn secondary" onclick="clearChat('openrouter')">Clear</button>
+                                    <button class="chat-btn primary" onclick="exportChat('openrouter')">Export</button>
+                                </div>
+                            </div>
+                            <div class="chat-messages" id="openrouter-messages">
+                                <div class="chat-message assistant">
+                                    <div class="message-avatar">🌐</div>
+                                    <div class="message-content">
+                                        <div class="message-text">Welcome to OpenRouter! I can connect you to 200+ AI models. Select any model from the dropdown and start chatting.</div>
+                                        <div class="message-time">Just now</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="chat-input-area">
+                                <div class="chat-settings">
+                                    <div class="setting-group">
+                                        <label>Max Tokens:</label>
+                                        <input type="number" value="1000" min="1" max="4000" id="openrouter-max-tokens">
+                                    </div>
+                                    <div class="setting-group">
+                                        <label>Temperature:</label>
+                                        <input type="range" min="0" max="2" step="0.1" value="0.7" id="openrouter-temperature">
+                                        <span id="openrouter-temp-display">0.7</span>
+                                    </div>
+                                </div>
+                                <div class="chat-input-container">
+                                    <textarea class="chat-input" id="openrouter-input" placeholder="Ask any model anything..." rows="3"></textarea>
+                                    <button class="send-btn" onclick="sendMessage('openrouter')">
+                                        <span class="send-icon">→</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="openrouter-mcp" class="api-content">
+                        <div class="code-block">
+                            <div class="code-header">
+                                <span class="code-title">OpenRouter + MCP Integration</span>
+                                <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                            </div>
+                            <div class="code-content">
+                                <pre><code>// OpenRouter with MCP - Ultimate flexibility
+class OpenRouterMCPHub {
+    constructor(apiKey) {
+        this.openrouter = new OpenAI({
+            baseURL: "https://openrouter.ai/api/v1",
+            apiKey: apiKey
+        });
+        this.mcpClient = new MCPClient();
+        this.connectedServers = new Map();
+    }
+
+    async routeWithMCP(prompt, options = {}) {
+        const {
+            preferredModel = "anthropic/claude-3-opus",
+            fallbackModels = ["openai/gpt-4-turbo", "google/gemini-pro"],
+            mcpServers = ["filesystem", "web-search", "database"]
+        } = options;
+
+        // Connect to required MCP servers
+        await this.connectMCPServers(mcpServers);
+        
+        // Get available tools
+        const tools = await this.getAvailableTools();
+        
+        // Try preferred model first
+        try {
+            return await this.callModelWithMCP(preferredModel, prompt, tools, options);
+        } catch (error) {
+            console.warn(`Preferred model ${preferredModel} failed:`, error.message);
+            
+            // Try fallback models
+            for (const fallbackModel of fallbackModels) {
+                try {
+                    return await this.callModelWithMCP(fallbackModel, prompt, tools, options);
+                } catch (fallbackError) {
+                    continue;
+                }
+            }
+            
+            throw new Error('All models failed');
+        }
+    }
+}</code></pre>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="openrouter-kb" class="api-content">
+                        <div class="knowledge-base-manager">
+                            <div class="kb-header">
+                                <h4 class="kb-title">📚 OpenRouter Knowledge Hub</h4>
+                                <div class="kb-stats">
+                                    <span class="kb-stat">
+                                        <strong>Multi-Model</strong> RAG
+                                    </span>
+                                    <span class="kb-stat">
+                                        <strong>Cost</strong> Optimized
+                                    </span>
+                                    <span class="kb-stat">
+                                        <strong>200+</strong> Models
+                                    </span>
+                                </div>
+                            </div>
+                            
+                            <div class="kb-integration-code">
+                                <div class="code-block">
+                                    <div class="code-header">
+                                        <span class="code-title">Multi-Model RAG System</span>
+                                        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                                    </div>
+                                    <div class="code-content">
+                                        <pre><code>// OpenRouter Multi-Model Knowledge System
+class OpenRouterRAG {
+    constructor(apiKey, vectorStore) {
+        this.openrouter = new OpenAI({
+            baseURL: "https://openrouter.ai/api/v1",
+            apiKey: apiKey
+        });
+        this.vectorStore = vectorStore;
+        
+        // Model specializations
+        this.modelSpecializations = {
+            "reasoning": ["anthropic/claude-3-opus", "openai/gpt-4-turbo"],
+            "creative": ["anthropic/claude-3-opus", "meta-llama/llama-3-70b-instruct"],
+            "factual": ["google/gemini-pro", "openai/gpt-4-turbo"],
+            "economical": ["mistralai/mixtral-8x7b-instruct", "meta-llama/llama-3-8b-instruct"]
+        };
+    }
+
+    async queryWithOptimalModel(question, options = {}) {
+        const {
+            maxCost = 0.05,
+            requireSpeed = false,
+            domain = 'general'
+        } = options;
+
+        // 1. Search knowledge base
+        const relevantChunks = await this.searchKnowledgeBase(question);
+        
+        // 2. Determine optimal model
+        const optimalModel = await this.selectOptimalModel(question, options);
+        
+        // 3. Build context-aware prompt
+        const prompt = this.buildRAGPrompt(question, relevantChunks);
+        
+        // 4. Get response from optimal model
+        const response = await this.callWithCostLimit(optimalModel, prompt, maxCost);
+
+        return {
+            answer: response.content,
+            model: response.model,
+            sources: relevantChunks.map(c => c.metadata),
+            cost: response.cost
+        };
+    }
+}</code></pre>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- System Prompt Modal -->
+        <div id="systemPromptModal" class="system-prompt-modal">
+            <div class="system-prompt-content">
+                <div class="system-prompt-header">
+                    <h2 class="system-prompt-title" id="modalTitle">Configure System Prompt</h2>
+                    <button class="close-modal" onclick="closeSystemPrompt()">✕ Close</button>
+                </div>
+
+                <div class="prompt-templates">
+                    <div class="prompt-template" onclick="selectTemplate('expert')">
+                        <div class="template-name">🎯 Expert Assistant</div>
+                        <div class="template-description">Professional, knowledgeable responses</div>
+                    </div>
+                    <div class="prompt-template" onclick="selectTemplate('creative')">
+                        <div class="template-name">🎨 Creative Writer</div>
+                        <div class="template-description">Imaginative, engaging content</div>
+                    </div>
+                    <div class="prompt-template" onclick="selectTemplate('analyst')">
+                        <div class="template-name">📊 Data Analyst</div>
+                        <div class="template-description">Analytical, data-driven insights</div>
+                    </div>
+                </div>
+
+                <div class="prompt-editor">
+                    <label for="systemPromptText">System Prompt:</label>
+                    <textarea 
+                        id="systemPromptText" 
+                        class="prompt-textarea"
+                        placeholder="Enter your custom system prompt here..."
+                    ></textarea>
+                </div>
+
+                <div class="prompt-actions">
+                    <button class="prompt-btn secondary" onclick="resetSystemPrompt()">Reset to Default</button>
+                    <button class="prompt-btn primary" onclick="saveSystemPrompt()">Save & Apply</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function showApiTab(button, contentId) {
+            // Don't process if this is a system prompt button
+            if (button.textContent.includes('System Prompt')) {
+                return;
+            }
+            
+            // Get the parent agent card
+            const agentCard = button.closest('.agent-card');
+            
+            // Hide all api content in this card
+            agentCard.querySelectorAll('.api-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            
+            // Remove active class from all tabs in this card (except system prompt)
+            agentCard.querySelectorAll('.api-tab').forEach(tab => {
+                if (!tab.textContent.includes('System Prompt')) {
+                    tab.classList.remove('active');
+                }
+            });
+            
+            // Show selected content and activate tab
+            const targetContent = document.getElementById(contentId);
+            if (targetContent) {
+                targetContent.classList.add('active');
+                button.classList.add('active');
+            }
+        }
+
+        function copyCode(button) {
+            const codeBlock = button.closest('.code-block').querySelector('code');
+            const text = codeBlock.textContent;
+            
+            navigator.clipboard.writeText(text).then(() => {
+                button.textContent = 'Copied!';
+                setTimeout(() => {
+                    button.textContent = 'Copy';
+                }, 2000);
+            }).catch(err => {
+                console.error('Failed to copy code:', err);
+            });
+        }
+
+        // System Prompt functionality
+        let currentModel = '';
+        const systemPrompts = {
+            claude: '',
+            gpt4: '',
+            gemini: '',
+            deepseek: '',
+            llama: '',
+            mistral: '',
+            openrouter: ''
+        };
+
+        const promptTemplates = {
+            expert: "You are an expert AI assistant with deep knowledge across multiple domains. Provide comprehensive, accurate, and well-structured responses.",
+            creative: "You are a highly creative AI assistant specializing in imaginative content creation. Approach every task with originality and flair.",
+            analyst: "You are a professional data analyst and business intelligence expert. Focus on data-driven insights and actionable recommendations."
+        };
+
+        function showSystemPrompt(model) {
+            currentModel = model;
+            const modal = document.getElementById('systemPromptModal');
+            const title = document.getElementById('modalTitle');
+            const textarea = document.getElementById('systemPromptText');
+            
+            title.textContent = `Configure System Prompt - ${model.toUpperCase()}`;
+            textarea.value = systemPrompts[model] || '';
+            
+            modal.classList.add('active');
+        }
+
+        function closeSystemPrompt() {
+            document.getElementById('systemPromptModal').classList.remove('active');
+        }
+
+        function selectTemplate(templateKey) {
+            const textarea = document.getElementById('systemPromptText');
+            textarea.value = promptTemplates[templateKey];
+            
+            // Update active template
+            document.querySelectorAll('.prompt-template').forEach(template => {
+                template.classList.remove('active');
+            });
+            event.target.closest('.prompt-template').classList.add('active');
+        }
+
+        function resetSystemPrompt() {
+            const textarea = document.getElementById('systemPromptText');
+            textarea.value = '';
+            systemPrompts[currentModel] = '';
+        }
+
+        function saveSystemPrompt() {
+            const textarea = document.getElementById('systemPromptText');
+            systemPrompts[currentModel] = textarea.value;
+            
+            const saveBtn = document.querySelector('.prompt-btn.primary');
+            saveBtn.textContent = '✓ Saved!';
+            
+            setTimeout(() => {
+                saveBtn.textContent = 'Save & Apply';
+                closeSystemPrompt();
+            }, 1000);
+        }
+
+        // Chat Interface Functions
+        const chatStates = {
+            claude: { messages: [] },
+            openrouter: { messages: [] }
+        };
+
+        function sendMessage(modelName) {
+            const inputElement = document.getElementById(`${modelName}-input`);
+            const messagesContainer = document.getElementById(`${modelName}-messages`);
+            const message = inputElement.value.trim();
+            
+            if (!message) return;
+
+            // Add user message
+            addMessageToChat(modelName, message, 'user');
+            inputElement.value = '';
+            
+            // Add loading indicator
+            const loadingDiv = addLoadingMessage(modelName);
+            
+            // Simulate response
+            setTimeout(() => {
+                loadingDiv.remove();
+                const response = `[${modelName.toUpperCase()} Response] Thank you for your message: "${message}". This is a simulated response demonstrating the chat interface.`;
+                addMessageToChat(modelName, response, 'assistant');
+            }, 1500);
+        }
+
+        function addMessageToChat(modelName, message, role) {
+            const messagesContainer = document.getElementById(`${modelName}-messages`);
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `chat-message ${role}`;
+            
+            const avatar = role === 'user' ? '👤' : getModelAvatar(modelName);
+            const time = new Date().toLocaleTimeString();
+            
+            messageDiv.innerHTML = `
+                <div class="message-avatar">${avatar}</div>
+                <div class="message-content">
+                    <div class="message-text">${message}</div>
+                    <div class="message-time">${time}</div>
+                </div>
+            `;
+            
+            messagesContainer.appendChild(messageDiv);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        function addLoadingMessage(modelName) {
+            const messagesContainer = document.getElementById(`${modelName}-messages`);
+            const loadingDiv = document.createElement('div');
+            loadingDiv.className = 'chat-message assistant loading';
+            loadingDiv.innerHTML = `
+                <div class="message-avatar">${getModelAvatar(modelName)}</div>
+                <div class="message-content">
+                    <div class="message-text">Thinking...</div>
+                </div>
+            `;
+            
+            messagesContainer.appendChild(loadingDiv);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            
+            return loadingDiv;
+        }
+
+        function getModelAvatar(modelName) {
+            const avatars = {
+                claude: '🤖',
+                openrouter: '🌐'
+            };
+            return avatars[modelName] || '🤖';
+        }
+
+        function clearChat(modelName) {
+            const messagesContainer = document.getElementById(`${modelName}-messages`);
+            if (messagesContainer) {
+                const welcomeMessage = messagesContainer.querySelector('.chat-message.assistant');
+                messagesContainer.innerHTML = '';
+                if (welcomeMessage) {
+                    messagesContainer.appendChild(welcomeMessage.cloneNode(true));
+                }
+            }
+        }
+
+        function exportChat(modelName) {
+            const messagesContainer = document.getElementById(`${modelName}-messages`);
+            const messages = messagesContainer.querySelectorAll('.chat-message:not(.loading)');
+            
+            let exportText = `Chat Export - ${modelName.toUpperCase()}\n`;
+            exportText += `Generated: ${new Date().toLocaleString()}\n\n`;
+            
+            messages.forEach(msg => {
+                const role = msg.classList.contains('assistant') ? 'Assistant' : 'User';
+                const text = msg.querySelector('.message-text').textContent;
+                const time = msg.querySelector('.message-time').textContent;
+                
+                exportText += `[${time}] ${role}: ${text}\n\n`;
+            });
+            
+            const blob = new Blob([exportText], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${modelName}-chat-export-${Date.now()}.txt`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        // Knowledge Base Functions
+        function addManualEntry(modelName) {
+            const title = prompt('Enter document title:');
+            const content = prompt('Enter document content:');
+            
+            if (title && content) {
+                alert(`Document "${title}" added to ${modelName} knowledge base!`);
+            }
+        }
+
+        function importFromURL(modelName) {
+            const url = prompt('Enter URL to import:');
+            
+            if (url) {
+                alert(`URL "${url}" imported to ${modelName} knowledge base!`);
+            }
+        }
+
+        function syncKnowledgeBase(modelName) {
+            const button = event.target;
+            button.textContent = '🔄 Syncing...';
+            button.disabled = true;
+            
+            setTimeout(() => {
+                button.textContent = '✓ Synced';
+                setTimeout(() => {
+                    button.textContent = '🔄 Sync';
+                    button.disabled = false;
+                }, 1000);
+            }, 2000);
+        }
+
+        function searchKB(modelName) {
+            alert(`Searching ${modelName} knowledge base...`);
+        }
+
+        function editKBDoc(modelName, docName) {
+            alert(`Edit functionality for ${docName} would open here`);
+        }
+
+        function removeKBDoc(modelName, docName) {
+            if (confirm(`Remove ${docName} from knowledge base?`)) {
+                alert(`${docName} removed from ${modelName} knowledge base`);
+            }
+        }
+
+        // Initialize temperature displays
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('input[type="range"]').forEach(slider => {
+                const displayId = slider.id.replace('-temperature', '-temp-display');
+                const display = document.getElementById(displayId);
+                
+                if (display) {
+                    slider.addEventListener('input', function() {
+                        display.textContent = this.value;
+                    });
+                }
+            });
+
+            // Close modal when clicking outside
+            document.getElementById('systemPromptModal').addEventListener('click', function(e) {
+                if (e.target === this) {
+                    closeSystemPrompt();
+                }
+            });
+
+            // Keyboard shortcuts
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') {
+                    closeSystemPrompt();
+                }
+            });
+        });
+    </script>
+</body>
+</html>
