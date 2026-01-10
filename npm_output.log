@@ -1,0 +1,14 @@
+
+> ai-dashboard-frontend@0.0.0 dev
+> vite
+
+
+  VITE v5.4.21  ready in 690 ms
+
+  ➜  Local:   http://localhost:5173/
+  ➜  Network: use --host to expose
+/*! 🌼 daisyUI 5.5.14 */
+3:15:47 AM [vite] ✨ new dependencies optimized: axios
+3:15:47 AM [vite] ✨ optimized dependencies changed. reloading
+3:17:39 AM [vite] .env changed, restarting server...
+3:17:39 AM [vite] server restarted.
