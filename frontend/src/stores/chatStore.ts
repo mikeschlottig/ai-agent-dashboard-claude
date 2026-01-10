@@ -31,7 +31,7 @@ const useChatStore = create<ChatState>((set, get) => ({
     set({ messages: [...messages, newUserMessage], inputText: '', isLoading: true });
 
     try {
-      const response = await axios.post(`${import.meta.env.VITE_API_URL}/api/models/chat`, {
+      const response = await axios.post('/api/models/chat', {
         message: inputText,
         model: selectedModel,
       });

@@ -9,6 +9,7 @@ const Sidebar: React.FC = () => {
         <ul>
           <li><Link to="/">Dashboard</Link></li>
           <li><Link to="/chat">Chat</Link></li>
+          <li><Link to="/ingest">Ingest</Link></li>
         </ul>
       </nav>
     </aside>

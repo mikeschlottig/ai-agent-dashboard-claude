@@ -4,6 +4,7 @@ import { Routes, Route } from 'react-router-dom';
 import AppLayout from './components/layout/AppLayout';
 import Dashboard from './pages/Dashboard';
 import Chat from './pages/Chat';
+import Ingest from './pages/Ingest';
 
 const App: React.FC = () => {
   return (
@@ -11,6 +12,7 @@ const App: React.FC = () => {
       <Routes>
         <Route path="/" element={<Dashboard />} />
         <Route path="/chat" element={<Chat />} />
+        <Route path="/ingest" element={<Ingest />} />
       </Routes>
     </AppLayout>
   );

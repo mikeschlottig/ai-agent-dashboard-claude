@@ -1,0 +1,117 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            Int      @id @default(autoincrement())
+  email         String   @unique
+  password_hash String
+  first_name    String?
+  last_name     String?
+  role          String   @default("user")
+  is_active     Boolean  @default(true)
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
+  api_keys      ApiKey[]
+  chats         Chat[]
+  documents     Document[]
+  system_prompts SystemPrompt[]
+  mcp_servers   McpServer[]
+  usage_logs    UsageLog[]
+}
+
+model ApiKey {
+  id            Int      @id @default(autoincrement())
+  user_id       Int
+  user          User     @relation(fields: [user_id], references: [id])
+  provider      String
+  key_name      String
+  encrypted_key String
+  is_active     Boolean  @default(true)
+  created_at    DateTime @default(now())
+}
+
+model Chat {
+  id            Int       @id @default(autoincrement())
+  user_id       Int
+  user          User      @relation(fields: [user_id], references: [id])
+  title         String?
+  model_used    String?
+  system_prompt String?
+  total_tokens  Int       @default(0)
+  total_cost    Float     @default(0)
+  created_at    DateTime  @default(now())
+  updated_at    DateTime  @updatedAt
+  messages      Message[]
+}
+
+model Message {
+  id          Int      @id @default(autoincrement())
+  chat_id     Int
+  chat        Chat     @relation(fields: [chat_id], references: [id])
+  role        String // 'user', 'assistant', 'system'
+  content     String
+  model       String?
+  tokens_used Int?
+  cost        Float?
+  metadata    String? // JSON stored as a string
+  timestamp   DateTime @default(now())
+}
+
+model Document {
+  id               Int      @id @default(autoincrement())
+  user_id          Int
+  user             User     @relation(fields: [user_id], references: [id])
+  filename         String
+  original_name    String
+  file_type        String?
+  file_size        Int?
+  content          String?
+  metadata         String? // JSON
+  embedding_status String   @default("pending")
+  uploaded_at      DateTime @default(now())
+}
+
+model SystemPrompt {
+  id              Int      @id @default(autoincrement())
+  user_id         Int
+  user            User     @relation(fields: [user_id], references: [id])
+  model           String?
+  prompt_name     String
+  prompt_content  String
+  is_default      Boolean  @default(false)
+  created_at      DateTime @default(now())
+}
+
+model McpServer {
+  id             Int       @id @default(autoincrement())
+  user_id        Int
+  user           User      @relation(fields: [user_id], references: [id])
+  server_name    String
+  endpoint       String?
+  config         String? // JSON
+  status         String    @default("disconnected")
+  last_connected DateTime?
+  created_at     DateTime  @default(now())
+}
+
+model UsageLog {
+  id               Int      @id @default(autoincrement())
+  user_id          Int
+  user             User     @relation(fields: [user_id], references: [id])
+  model            String?
+  action_type      String? // 'chat', 'completion', 'embedding'
+  tokens_used      Int?
+  cost             Float?
+  response_time_ms Int?
+  success          Boolean?
+  timestamp        DateTime @default(now())
+}
