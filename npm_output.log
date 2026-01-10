@@ -1,0 +1,15 @@
+
+> ai-dashboard-frontend@0.0.0 dev
+> vite
+
+Re-optimizing dependencies because lockfile has changed
+
+  VITE v5.4.21  ready in 730 ms
+
+  ➜  Local:   http://localhost:5173/
+  ➜  Network: use --host to expose
+/*! 🌼 daisyUI 5.5.14 */
+8:48:56 AM [vite] page reload src/stores/chatStore.ts
+8:55:48 AM [vite] changed tsconfig file detected: /app/frontend/tsconfig.json - Clearing cache and forcing full-reload to ensure TypeScript is compiled with updated config values.
+8:57:55 AM [vite] ✨ new dependencies optimized: react/jsx-dev-runtime
+8:57:55 AM [vite] ✨ optimized dependencies changed. reloading
